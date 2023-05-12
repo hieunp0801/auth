@@ -51,11 +51,10 @@ namespace auth
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["Jwt:Secret"])),
                         ValidateIssuer = false,
                         ValidateAudience = false,
-                        ClockSkew = TimeSpan.Zero
+                        ValidateLifetime = true,
                     };
                 }
             );
-            
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -76,7 +75,7 @@ namespace auth
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

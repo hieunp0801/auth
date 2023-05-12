@@ -1,4 +1,5 @@
 using auth.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace auth.Controllers
@@ -11,9 +12,10 @@ namespace auth.Controllers
         public TestController(MyDbContext context){
             _context = context;
         }
-        [HttpGet("id")]
-        public ActionResult test(int id){
-            return null;
+        [HttpGet]
+        [Authorize]
+        public ActionResult testAuthorize(){
+            return Ok("ok");
         }
         
     }

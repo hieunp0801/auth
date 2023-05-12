@@ -2,8 +2,14 @@ using auth.Data;
 using auth.Models;
 using auth.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 
 namespace auth.Controllers
 {
@@ -16,9 +22,11 @@ namespace auth.Controllers
             return null;
         }
         private readonly MyDbContext _context;
+        private readonly IConfiguration _configuration;
         
-        public AuthController(MyDbContext context){
+        public AuthController(MyDbContext context,IConfiguration configuration){
             _context = context;
+            _configuration = configuration;
         }
         [HttpPost("login")]
         public ActionResult<ResponseObject> login(LoginModel request){
@@ -35,10 +43,26 @@ namespace auth.Controllers
             }
             else {
                 if(UserService.VerifyPassword(password,user.passwordHash)){
+                    //  Login successs
+                    var authClaims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name,username),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    };
+
+                    var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Secret"]));
+                    var token = new JwtSecurityToken(
+                        expires: DateTime.Now.AddDays(1),
+                        claims: authClaims,
+                        signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                    );
                     ResponseObject response = new ResponseObject{
                         status = "200",
                         message = "Login success",
-                        data = null
+                        data = new {
+                            token = new JwtSecurityTokenHandler().WriteToken(token),
+                            expiration = token.ValidTo
+                        }
                     };
                     return response;
                 }
